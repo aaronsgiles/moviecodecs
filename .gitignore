@@ -1,0 +1,14 @@
+**/__pycache__/
+**/*.obj
+**/*.o
+**/*.pdb
+**/*.ilk
+**/*.exp
+/*.dll
+/*.so
+/*.dylib
+/*.lib
+/*.exe
+/*.png
+/*.dSYM
+mctest

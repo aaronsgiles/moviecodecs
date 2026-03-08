@@ -1,0 +1,143 @@
+#!/bin/bash
+
+# determine platform
+PLATFORM=linux
+[[ $OSTYPE == 'darwin'* ]] && PLATFORM=macos
+
+# determine target architecture; from command line if provided
+ARCH=
+if [ "$#" -ge 1 ]; then
+    ARCH=$1
+else
+    # if no arch specified for macos, build both and lipo them together
+    if [ $PLATFORM == 'macos' ]; then
+        $0 arm64
+        $0 x86_64
+        lipo moviecodecs-x86_64.dylib moviecodecs-arm64.dylib -create -output moviecodecs.dylib
+        exit 0
+    fi
+
+    # otherwise determine from environment
+    UNAMEP=`uname -p`
+    ARCH=x86_64
+    [[ $UNAMEP == 'arm' || $UNAMEP == 'arm64' || $UNAMEP == 'aarch64' ]] && ARCH=arm64
+fi
+
+# object directory
+OBJDIR=obj/$PLATFORM/$ARCH
+
+# tools
+CC=clang-10
+[[ $PLATFORM == 'macos' ]] && CC=clang
+LD=$CC
+
+# target name
+TARGET=moviecodecs.so
+[[ $PLATFORM == 'macos' ]] && TARGET=moviecodecs-$ARCH.dylib
+
+# compiler options
+COPTS="-c --include=libbuild/fi.h -fPIC -O3 -I. -I./libavcodec -I./libbuild -Wno-deprecated-declarations -Wno-pointer-sign -Wno-parentheses -Wno-switch -Wno-implicit-int-float-conversion -fvisibility=hidden"
+[[ $PLATFORM == 'macos' ]] && COPTS="$COPTS -mmacosx-version-min=10.15 -arch $ARCH"
+
+# link options
+LDOPTS="-shared"
+[[ $PLATFORM == 'macos' ]] && LDOPTS="$LDOPTS -mmacosx-version-min=10.15 -arch $ARCH"
+
+# libavcodec files
+CODECFILES=
+CODECFILES="$CODECFILES libavcodec/allcodecs.c"
+CODECFILES="$CODECFILES libavcodec/avcodec.c"
+CODECFILES="$CODECFILES libavcodec/bitstream_filters.c"
+CODECFILES="$CODECFILES libavcodec/bsf.c"
+CODECFILES="$CODECFILES libavcodec/bsf/null.c"
+CODECFILES="$CODECFILES libavcodec/codec_desc.c"
+CODECFILES="$CODECFILES libavcodec/codec_par.c"
+CODECFILES="$CODECFILES libavcodec/decode.c"
+CODECFILES="$CODECFILES libavcodec/encode.c"
+CODECFILES="$CODECFILES libavcodec/get_buffer.c"
+CODECFILES="$CODECFILES libavcodec/hpeldsp.c"
+CODECFILES="$CODECFILES libavcodec/ivi.c"
+CODECFILES="$CODECFILES libavcodec/ivi_dsp.c"
+CODECFILES="$CODECFILES libavcodec/indeo2.c"
+CODECFILES="$CODECFILES libavcodec/indeo3.c"
+CODECFILES="$CODECFILES libavcodec/indeo4.c"
+CODECFILES="$CODECFILES libavcodec/indeo5.c"
+CODECFILES="$CODECFILES libavcodec/lcevcdec.c"
+CODECFILES="$CODECFILES libavcodec/mathtables.c"
+CODECFILES="$CODECFILES libavcodec/msvideo1.c"
+CODECFILES="$CODECFILES libavcodec/options.c"
+CODECFILES="$CODECFILES libavcodec/packet.c"
+CODECFILES="$CODECFILES libavcodec/threadprogress.c"
+CODECFILES="$CODECFILES libavcodec/utils.c"
+CODECFILES="$CODECFILES libavcodec/vlc.c"
+
+# libavcodec objs
+CODECOBJS=${CODECFILES//\.c/\.o}
+CODECOBJS=${CODECOBJS//libav/$OBJDIR\/libav}
+
+# libavutil files
+UTILFILES=
+UTILFILES="$UTILFILES libavutil/avstring.c"
+UTILFILES="$UTILFILES libavutil/avsscanf.c"
+UTILFILES="$UTILFILES libavutil/bprint.c"
+UTILFILES="$UTILFILES libavutil/buffer.c"
+UTILFILES="$UTILFILES libavutil/channel_layout.c"
+UTILFILES="$UTILFILES libavutil/container_fifo.c"
+UTILFILES="$UTILFILES libavutil/dict.c"
+UTILFILES="$UTILFILES libavutil/error.c"
+UTILFILES="$UTILFILES libavutil/eval.c"
+UTILFILES="$UTILFILES libavutil/fifo.c"
+UTILFILES="$UTILFILES libavutil/frame.c"
+UTILFILES="$UTILFILES libavutil/hwcontext.c"
+UTILFILES="$UTILFILES libavutil/imgutils.c"
+UTILFILES="$UTILFILES libavutil/log.c"
+UTILFILES="$UTILFILES libavutil/log2_tab.c"
+UTILFILES="$UTILFILES libavutil/mastering_display_metadata.c"
+UTILFILES="$UTILFILES libavutil/mathematics.c"
+UTILFILES="$UTILFILES libavutil/mem.c"
+UTILFILES="$UTILFILES libavutil/opt.c"
+UTILFILES="$UTILFILES libavutil/parseutils.c"
+UTILFILES="$UTILFILES libavutil/pixdesc.c"
+UTILFILES="$UTILFILES libavutil/random_seed.c"
+UTILFILES="$UTILFILES libavutil/rational.c"
+UTILFILES="$UTILFILES libavutil/refstruct.c"
+UTILFILES="$UTILFILES libavutil/reverse.c"
+UTILFILES="$UTILFILES libavutil/samplefmt.c"
+UTILFILES="$UTILFILES libavutil/sha.c"
+UTILFILES="$UTILFILES libavutil/side_data.c"
+UTILFILES="$UTILFILES libavutil/time.c"
+UTILFILES="$UTILFILES libavutil/timecode_internal.c"
+UTILFILES="$UTILFILES libavutil/utils.c"
+
+# libavutil objs
+UTILOBJS=${UTILFILES//\.c/\.o}
+UTILOBJS=${UTILOBJS//libav/$OBJDIR\/libav}
+
+# build test code
+echo mctest.c
+$CC -omctest -g -O0 mctest.c -ldl
+
+# build wrapper
+mkdir -p $OBJDIR
+echo moviecodecs.c
+$CC $COPTS -o$OBJDIR/moviecodecs.o moviecodecs.c
+
+# build avcodec files
+mkdir -p $OBJDIR/libavcodec/bsf
+for CURFILE in $CODECFILES; do
+    echo $CURFILE
+    $CC $COPTS -o$OBJDIR/${CURFILE/\.c/\.o} $CURFILE
+done
+
+# build avutil files
+mkdir -p $OBJDIR/libavutil
+for CURFILE in $UTILFILES; do
+    echo $CURFILE
+    $CC $COPTS -o$OBJDIR/${CURFILE/\.c/\.o} $CURFILE
+done
+
+# build shared library and strip it
+echo Linking...
+$LD $CODECOBJS $UTILOBJS $OBJDIR/moviecodecs.o $LDOPTS -lm -o $TARGET
+strip $TARGET
+
