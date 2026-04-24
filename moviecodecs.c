@@ -82,14 +82,19 @@ void pal8_to_rgb(AVFrame *frame, moviecodecs_output_t *dest)
 {
     int effheight = (dest->height < frame->height) ? dest->height : frame->height;
     int effwidth = (dest->width < frame->width) ? dest->width : frame->width;
-    uint32_t const *pal = (uint32_t const *)frame->data[1];
+
+    // create a local palette with the index encoded in the upper bits
+    uint32_t const *srcpal = (uint32_t const *)frame->data[1];
+    uint32_t palette[256];
+    for (int index = 0; index < 256; index++)
+        palette[index] = (index << 24) | (srcpal[index] & 0xffffff);
 
     uint32_t *dptr = dest->dest;
     for (int y = 0; y < effheight; y++)
     {
         uint8_t *pixdata = frame->data[0] + frame->linesize[0] * y;
         for (int x = 0; x < effwidth; x++)
-            dptr[x] = pal[pixdata[x]];
+            dptr[x] = palette[pixdata[x]];
         dptr += dest->rowpixels;
     }
 }
