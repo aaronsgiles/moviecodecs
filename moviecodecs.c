@@ -12,6 +12,17 @@
 #include "libavutil/frame.h"
 
 //
+// we compile with threads disabled, but MSVC debug is not smart enough
+// to strip all references
+//
+int ff_thread_init(AVCodecContext *avctx) { return 0; }
+void ff_thread_free(AVCodecContext *avctx) { }
+void ff_thread_flush(AVCodecContext *avctx) { }
+int ff_frame_thread_encoder_init(AVCodecContext *avctx) { return 0; }
+void ff_frame_thread_encoder_free(AVCodecContext *avctx) { }
+int ff_thread_video_encode_frame(AVCodecContext *avctx, AVPacket *pkt, AVFrame *frame, int *got_packet_ptr) { return 0; }
+
+//
 // full codec structure
 //
 struct context_internal_t
