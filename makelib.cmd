@@ -3,6 +3,11 @@
 @rem determine platform
 @set PLATFORM=windows
 
+@rem debug build
+@set DEBUG=0
+@if "%1"=="debug" set DEBUG=1
+@if "%1"=="debug" shift
+
 @rem determine target architecture; from command line if provided
 @set ARCH=
 @if not "%1"=="" @set ARCH=%1
@@ -24,7 +29,9 @@
 @set TARGET=moviecodecs.dll
 
 @rem compiler options
-@set COPTS=/nologo /c /FIlibbuild\fi.h /std:c11 /experimental:c11atomics /Oxs /I. /I.\libavcodec /I.\libbuild /Zi /we4668
+@set COPTS=/nologo /c /FIlibbuild\fi.h /std:c11 /experimental:c11atomics /I. /I.\libavcodec /I.\libbuild /Zi /we4668
+@if "%DEBUG%"=="0" set COPTS=%COPTS% /Oxs
+@if "%DEBUG%"=="1" set COPTS=%COPTS% /Od
 
 @rem link options
 @set LDOPTS=/nologo /dll /debug /opt:icf /opt:ref
