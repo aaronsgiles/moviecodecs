@@ -154,11 +154,19 @@ static moviecodecs_context_t *codec_create(uint32_t fourcc, uint32_t width, uint
     if (context == NULL)
         return NULL;
 
+    // if we have extradata, allocate a copy
+    void *extradata = 0;
+    if (configsize > 0)
+    {
+        extradata = av_malloc(configsize);
+        memcpy(extradata, config, configsize);
+    }
+
     // configure the context
     context->width = width;
     context->height = height;
     context->bits_per_coded_sample = depth;
-    context->extradata = config;
+    context->extradata = extradata;
     context->extradata_size = configsize;
 
     // open the codec
