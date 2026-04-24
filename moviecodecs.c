@@ -30,6 +30,7 @@ struct context_internal_t
     moviecodecs_context_t public;
     AVCodecContext *context;
     AVFrame *frame;
+    uint32_t palette[256];
 };
 typedef struct context_internal_t context_internal_t;
 
@@ -78,23 +79,16 @@ void yuv410_to_rgb(AVFrame *frame, moviecodecs_output_t *dest)
 //
 // convert a PAL8 frame to RGB
 //
-void pal8_to_rgb(AVFrame *frame, moviecodecs_output_t *dest)
+void pal8_to_rgb(AVFrame *frame, moviecodecs_output_t *dest, uint32_t const *srcpal)
 {
     int effheight = (dest->height < frame->height) ? dest->height : frame->height;
     int effwidth = (dest->width < frame->width) ? dest->width : frame->width;
-
-    // create a local palette with the index encoded in the upper bits
-    uint32_t const *srcpal = (uint32_t const *)frame->data[1];
-    uint32_t palette[256];
-    for (int index = 0; index < 256; index++)
-        palette[index] = (index << 24) | (srcpal[index] & 0xffffff);
-
     uint32_t *dptr = dest->dest;
     for (int y = 0; y < effheight; y++)
     {
         uint8_t *pixdata = frame->data[0] + frame->linesize[0] * y;
         for (int x = 0; x < effwidth; x++)
-            dptr[x] = palette[pixdata[x]];
+            dptr[x] = srcpal[pixdata[x]];
         dptr += dest->rowpixels;
     }
 }
@@ -161,8 +155,18 @@ static moviecodecs_context_t *codec_create(uint32_t fourcc, uint32_t width, uint
     void *extradata = 0;
     if (configsize > 0)
     {
+        uint32_t origsize = configsize;
+
+        // MSVIDEO codec expects a full palette; however, not all videos supply one
+        // so extend to full palette
+        if (id == AV_CODEC_ID_MSVIDEO1 && configsize < 256*4)
+            configsize = 256*4;
+
+        // copy in the data, and 0-extend if short
         extradata = av_malloc(configsize);
-        memcpy(extradata, config, configsize);
+        memcpy(extradata, config, origsize);
+        if (configsize > origsize)
+            memset((uint8_t *)extradata + origsize, 0, configsize - origsize);
     }
 
     // configure the context
@@ -194,6 +198,16 @@ static moviecodecs_context_t *codec_create(uint32_t fourcc, uint32_t width, uint
     result->public.height = context->height;
     result->context = context;
     result->frame = frame;
+
+    // if this is the MSVC palette, save a copy for ourself
+    if (id == AV_CODEC_ID_MSVIDEO1 && configsize >= sizeof(result->palette))
+    {
+        // insert the palette index into the upper byte to accelerate 8-bit rendering
+        uint32_t const *palette = (uint32_t const *)extradata;
+        for (uint32_t index = 0; index < sizeof(result->palette)/sizeof(result->palette[0]); index++)
+            result->palette[index] = (index << 24) | (palette[index] & 0xffffff);
+    }
+
     return &result->public;
 }
 
@@ -235,7 +249,7 @@ static int codec_decode_rgb(moviecodecs_context_t *codec, uint8_t *data, uint32_
             return 1;
 
         case AV_PIX_FMT_PAL8:       ///< 8 bits with AV_PIX_FMT_RGB32 palette
-            pal8_to_rgb(codecfull->frame, dest);
+            pal8_to_rgb(codecfull->frame, dest, &codecfull->palette[0]);
             return 1;
 
         case AV_PIX_FMT_RGB555:     ///< packed RGB 5:5:5, 16bpp, (msb)1X 5R 5G 5B(lsb), little-endian, X=unused/undefined
