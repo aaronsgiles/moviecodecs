@@ -39,30 +39,51 @@
 
 @rem libavcodec files
 @set CODECFILES=
+@set CODECFILES=%CODECFILES% libavcodec\aasc.c
 @set CODECFILES=%CODECFILES% libavcodec\allcodecs.c
 @set CODECFILES=%CODECFILES% libavcodec\avcodec.c
 @set CODECFILES=%CODECFILES% libavcodec\bitstream_filters.c
+@set CODECFILES=%CODECFILES% libavcodec\blockdsp.c
 @set CODECFILES=%CODECFILES% libavcodec\bsf.c
 @set CODECFILES=%CODECFILES% libavcodec\bsf\null.c
 @set CODECFILES=%CODECFILES% libavcodec\codec_desc.c
 @set CODECFILES=%CODECFILES% libavcodec\codec_par.c
 @set CODECFILES=%CODECFILES% libavcodec\decode.c
 @set CODECFILES=%CODECFILES% libavcodec\encode.c
+@set CODECFILES=%CODECFILES% libavcodec\error_resilience.c
 @set CODECFILES=%CODECFILES% libavcodec\get_buffer.c
+@set CODECFILES=%CODECFILES% libavcodec\h264chroma.c
 @set CODECFILES=%CODECFILES% libavcodec\hpeldsp.c
+@set CODECFILES=%CODECFILES% libavcodec\idctdsp.c
 @set CODECFILES=%CODECFILES% libavcodec\ivi.c
 @set CODECFILES=%CODECFILES% libavcodec\ivi_dsp.c
 @set CODECFILES=%CODECFILES% libavcodec\indeo2.c
 @set CODECFILES=%CODECFILES% libavcodec\indeo3.c
 @set CODECFILES=%CODECFILES% libavcodec\indeo4.c
 @set CODECFILES=%CODECFILES% libavcodec\indeo5.c
+@set CODECFILES=%CODECFILES% libavcodec\jrevdct.c
 @set CODECFILES=%CODECFILES% libavcodec\lcevcdec.c
 @set CODECFILES=%CODECFILES% libavcodec\mathtables.c
+@set CODECFILES=%CODECFILES% libavcodec\me_cmp.c
+@set CODECFILES=%CODECFILES% libavcodec\mpeg_er.c
+@set CODECFILES=%CODECFILES% libavcodec\mpeg12.c
+@set CODECFILES=%CODECFILES% libavcodec\mpeg12data.c
+@set CODECFILES=%CODECFILES% libavcodec\mpeg12dec.c
+@set CODECFILES=%CODECFILES% libavcodec\mpeg12framerate.c
+@set CODECFILES=%CODECFILES% libavcodec\mpegpicture.c
+@set CODECFILES=%CODECFILES% libavcodec\mpegutils.c
+@set CODECFILES=%CODECFILES% libavcodec\mpegvideo.c
+@set CODECFILES=%CODECFILES% libavcodec\mpegvideo_dec.c
+@set CODECFILES=%CODECFILES% libavcodec\mpegvideodata.c
+@set CODECFILES=%CODECFILES% libavcodec\mpegvideo_motion.c
+@set CODECFILES=%CODECFILES% libavcodec\msrledec.c
 @set CODECFILES=%CODECFILES% libavcodec\msvideo1.c
 @set CODECFILES=%CODECFILES% libavcodec\options.c
 @set CODECFILES=%CODECFILES% libavcodec\packet.c
+@set CODECFILES=%CODECFILES% libavcodec\simple_idct.c
 @set CODECFILES=%CODECFILES% libavcodec\threadprogress.c
 @set CODECFILES=%CODECFILES% libavcodec\utils.c
+@set CODECFILES=%CODECFILES% libavcodec\videodsp.c
 @set CODECFILES=%CODECFILES% libavcodec\vlc.c
 
 @rem libavcodec objs
@@ -101,9 +122,12 @@
 @set UTILFILES=%UTILFILES% libavutil\samplefmt.c
 @set UTILFILES=%UTILFILES% libavutil\sha.c
 @set UTILFILES=%UTILFILES% libavutil\side_data.c
+@set UTILFILES=%UTILFILES% libavutil\stereo3d.c
 @set UTILFILES=%UTILFILES% libavutil\time.c
+@set UTILFILES=%UTILFILES% libavutil\timecode.c
 @set UTILFILES=%UTILFILES% libavutil\timecode_internal.c
 @set UTILFILES=%UTILFILES% libavutil\utils.c
+@set UTILFILES=%UTILFILES% libavutil\video_enc_params.c
 
 @rem libavutil objs
 @set UTILOBJS=%UTILFILES:.c=.obj%

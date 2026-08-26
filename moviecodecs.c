@@ -11,6 +11,8 @@
 #include "libavcodec/avcodec.h"
 #include "libavutil/frame.h"
 
+#include "libavcodec/to_upper4.h"
+
 //
 // we compile with threads disabled, but MSVC debug is not smart enough
 // to strip all references
@@ -118,6 +120,29 @@ void rgb555_to_rgb(AVFrame *frame, moviecodecs_output_t *dest)
 }
 
 //
+// convert a BGR24 frame to RGB
+//
+void bgr24_to_rgb(AVFrame *frame, moviecodecs_output_t *dest)
+{
+    int effheight = (dest->height < frame->height) ? dest->height : frame->height;
+    int effwidth = (dest->width < frame->width) ? dest->width : frame->width;
+
+    uint32_t *dptr = dest->dest;
+    for (int y = 0; y < effheight; y++)
+    {
+        uint8_t const *pixdata = (uint8_t *)(frame->data[0] + frame->linesize[0] * y);
+        for (int x = 0; x < effwidth; x++)
+        {
+            uint32_t raw = *pixdata++;
+            raw |= *pixdata++ << 8;
+            raw |= *pixdata++ << 16;
+            dptr[x] = raw;
+        }
+        dptr += dest->rowpixels;
+    }
+}
+
+//
 // locate and create a new code instance for the 'fourcc' code
 //
 // 'width' and 'height' are optional, and can be useful if known from the container
@@ -133,8 +158,16 @@ static moviecodecs_context_t *codec_create(uint32_t fourcc, uint32_t width, uint
         case MOVIECODECS_FOURCC('I','V','3','2'): id = AV_CODEC_ID_INDEO3; break;
         case MOVIECODECS_FOURCC('i','v','4','1'): id = AV_CODEC_ID_INDEO4; break;
         case MOVIECODECS_FOURCC('I','V','4','1'): id = AV_CODEC_ID_INDEO4; break;
+        case MOVIECODECS_FOURCC('i','v','5','0'): id = AV_CODEC_ID_INDEO5; break;
+        case MOVIECODECS_FOURCC('I','V','5','0'): id = AV_CODEC_ID_INDEO5; break;
         case MOVIECODECS_FOURCC('m','s','v','c'): id = AV_CODEC_ID_MSVIDEO1; break;
         case MOVIECODECS_FOURCC('M','S','V','C'): id = AV_CODEC_ID_MSVIDEO1; break;
+        case MOVIECODECS_FOURCC('a','a','s','c'): id = AV_CODEC_ID_AASC; break;
+        case MOVIECODECS_FOURCC('A','A','S','C'): id = AV_CODEC_ID_AASC; break;
+        case MOVIECODECS_FOURCC('m','p','e','g'): id = AV_CODEC_ID_MPEG1VIDEO; break;
+        case MOVIECODECS_FOURCC('M','P','E','G'): id = AV_CODEC_ID_MPEG1VIDEO; break;
+        case MOVIECODECS_FOURCC('m','p','g','2'): id = AV_CODEC_ID_MPEG2VIDEO; break;
+        case MOVIECODECS_FOURCC('M','P','G','2'): id = AV_CODEC_ID_MPEG2VIDEO; break;
     }
 
     // fail if we can't
@@ -252,8 +285,12 @@ static int codec_decode_rgb(moviecodecs_context_t *codec, uint8_t *data, uint32_
             pal8_to_rgb(codecfull->frame, dest, &codecfull->palette[0]);
             return 1;
 
-        case AV_PIX_FMT_RGB555:     ///< packed RGB 5:5:5, 16bpp, (msb)1X 5R 5G 5B(lsb), little-endian, X=unused/undefined
+        case AV_PIX_FMT_RGB555LE:   ///< packed RGB 5:5:5, 16bpp, (msb)1X 5R 5G 5B(lsb), little-endian, X=unused/undefined
             rgb555_to_rgb(codecfull->frame, dest);
+            return 1;
+
+        case AV_PIX_FMT_BGR24:      ///< packed RGB 8:8:8, 24bpp, BGRBGR...
+            bgr24_to_rgb(codecfull->frame, dest);
             return 1;
     }
 
