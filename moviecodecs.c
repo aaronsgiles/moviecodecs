@@ -154,8 +154,14 @@ static moviecodecs_context_t *codec_create(uint32_t fourcc, uint32_t width, uint
     enum AVCodecID id = AV_CODEC_ID_NONE;
     switch (fourcc)
     {
+        case MOVIECODECS_FOURCC('i','v','3','0'): id = AV_CODEC_ID_INDEO3; break;
+        case MOVIECODECS_FOURCC('I','V','3','0'): id = AV_CODEC_ID_INDEO3; break;
+        case MOVIECODECS_FOURCC('i','v','3','1'): id = AV_CODEC_ID_INDEO3; break;
+        case MOVIECODECS_FOURCC('I','V','3','1'): id = AV_CODEC_ID_INDEO3; break;
         case MOVIECODECS_FOURCC('i','v','3','2'): id = AV_CODEC_ID_INDEO3; break;
         case MOVIECODECS_FOURCC('I','V','3','2'): id = AV_CODEC_ID_INDEO3; break;
+        case MOVIECODECS_FOURCC('i','v','4','0'): id = AV_CODEC_ID_INDEO4; break;
+        case MOVIECODECS_FOURCC('I','V','4','0'): id = AV_CODEC_ID_INDEO4; break;
         case MOVIECODECS_FOURCC('i','v','4','1'): id = AV_CODEC_ID_INDEO4; break;
         case MOVIECODECS_FOURCC('I','V','4','1'): id = AV_CODEC_ID_INDEO4; break;
         case MOVIECODECS_FOURCC('i','v','5','0'): id = AV_CODEC_ID_INDEO5; break;
